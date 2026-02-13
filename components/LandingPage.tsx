@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ShieldCheck, UserPlus, HeartPulse, Stethoscope, ArrowRight, Activity, Pill } from 'lucide-react';
+import { ShieldCheck, UserPlus, HeartPulse, Stethoscope, ArrowRight, Activity, Pill, MapPin } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (view: 'ADMIN' | 'PATIENT' | 'PHARMACIST') => void;
@@ -117,8 +117,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      <footer className="bg-white border-t border-slate-200 py-8 text-center text-slate-500 text-sm">
-        &copy; {new Date().getFullYear()} SIT Pharmacy & Clinic Management System. All rights reserved.
+      <footer className="bg-white border-t border-slate-200">
+        {/* Map Section */}
+        <div className="w-full h-80 bg-slate-100 relative group">
+          <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 text-slate-800 font-bold text-sm pointer-events-none">
+            <MapPin size={16} className="text-red-500" /> Siliguri Institute of Technology
+          </div>
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3563.2961882512613!2d88.35574997495577!3d26.73490376769974!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39e4469e38c926fb%3A0x6b447814041d50ed!2sSiliguri%20Institute%20of%20Technology!5e0!3m2!1sen!2sin!4v1709280000000!5m2!1sen!2sin"
+            width="100%" 
+            height="100%" 
+            style={{ border: 0, filter: 'grayscale(20%)' }} 
+            allowFullScreen 
+            loading="lazy" 
+            referrerPolicy="no-referrer-when-downgrade"
+            className="hover:filter-none transition-all duration-500"
+          >
+          </iframe>
+        </div>
+
+        <div className="py-8 text-center text-slate-500 text-sm">
+          &copy; {new Date().getFullYear()} SIT Pharmacy & Clinic Management System. All rights reserved.
+        </div>
       </footer>
     </div>
   );

@@ -1,8 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Sale, Medicine, AnalyticsInsight } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+// Fix: Initialize GoogleGenAI with process.env.API_KEY directly as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getSmartInsights = async (sales: Sale[], inventory: Medicine[]): Promise<AnalyticsInsight[]> => {
   const prompt = `
