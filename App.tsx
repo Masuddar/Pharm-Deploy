@@ -40,6 +40,11 @@ const App: React.FC = () => {
 
   // --- Data State (with Persistence) ---
   
+  // Admin Credentials
+  const [adminCreds, setAdminCreds] = useState(() => 
+    loadState('medsync_admin_creds', { username: 'admin', pass: 'admin123' })
+  );
+
   // Medicines
   const [medicines, setMedicines] = useState<Medicine[]>(() => 
     loadState('medsync_medicines', MOCK_MEDICINES)
@@ -79,6 +84,7 @@ const App: React.FC = () => {
   useEffect(() => localStorage.setItem('medsync_sales', JSON.stringify(sales)), [sales]);
   useEffect(() => localStorage.setItem('medsync_appointments', JSON.stringify(appointments)), [appointments]);
   useEffect(() => localStorage.setItem('medsync_orders', JSON.stringify(purchaseOrders)), [purchaseOrders]);
+  useEffect(() => localStorage.setItem('medsync_admin_creds', JSON.stringify(adminCreds)), [adminCreds]);
 
   // AI State
   const [aiInsights, setAiInsights] = useState<AnalyticsInsight[]>([]);
@@ -233,7 +239,13 @@ const App: React.FC = () => {
   };
 
   if (currentView === 'LANDING') {
-    return <LandingPage onNavigate={handleLandingNavigation} />;
+    return (
+      <LandingPage 
+        onNavigate={handleLandingNavigation} 
+        pharmacists={pharmacists}
+        adminCredentials={adminCreds}
+      />
+    );
   }
 
   if (currentView === 'PATIENT') {

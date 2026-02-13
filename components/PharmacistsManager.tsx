@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Pharmacist } from '../types';
-import { Plus, Edit, Trash2, User, Phone, Search, X, BadgeCheck } from 'lucide-react';
+import { Plus, Edit, Trash2, User, Phone, Search, X, BadgeCheck, Lock, Key } from 'lucide-react';
 
 interface PharmacistsManagerProps {
   pharmacists: Pharmacist[];
@@ -21,7 +21,9 @@ const PharmacistsManager: React.FC<PharmacistsManagerProps> = ({ pharmacists, on
       name: '',
       contact: '',
       shift: '',
-      licenseNumber: ''
+      licenseNumber: '',
+      username: '',
+      password: ''
     });
     setIsModalOpen(true);
   };
@@ -103,6 +105,10 @@ const PharmacistsManager: React.FC<PharmacistsManagerProps> = ({ pharmacists, on
                 <BadgeCheck size={14} />
                 <span className="font-mono bg-slate-100 px-1 rounded text-xs">{phar.licenseNumber}</span>
               </div>
+              <div className="flex items-center gap-2 text-indigo-500">
+                <User size={14} />
+                <span className="font-mono text-xs">User: {phar.username || 'N/A'}</span>
+              </div>
             </div>
           </div>
         ))}
@@ -110,7 +116,7 @@ const PharmacistsManager: React.FC<PharmacistsManagerProps> = ({ pharmacists, on
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-slate-800">
                 {pharmacists.find(p => p.id === currentPhar.id) ? 'Edit Pharmacist' : 'Add New Pharmacist'}
@@ -156,6 +162,38 @@ const PharmacistsManager: React.FC<PharmacistsManagerProps> = ({ pharmacists, on
                   value={currentPhar.licenseNumber}
                   onChange={e => setCurrentPhar({...currentPhar, licenseNumber: e.target.value})}
                 />
+              </div>
+
+              {/* Login Credentials Section */}
+              <div className="bg-slate-50 p-4 rounded-xl space-y-4 border border-slate-100 mt-2">
+                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                   <Lock size={14} className="text-slate-500" /> Portal Login Credentials
+                </h4>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Username</label>
+                    <div className="relative">
+                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                        required
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        value={currentPhar.username}
+                        onChange={e => setCurrentPhar({...currentPhar, username: e.target.value})}
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+                    <div className="relative">
+                        <Key size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                        required
+                        type="text" // Visible for admin creation ease
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-mono"
+                        value={currentPhar.password}
+                        onChange={e => setCurrentPhar({...currentPhar, password: e.target.value})}
+                        />
+                    </div>
+                </div>
               </div>
 
               <button

@@ -27,6 +27,8 @@ export interface Pharmacist {
   contact: string;
   shift: string;
   licenseNumber: string;
+  username?: string;
+  password?: string;
 }
 
 export interface Patient {

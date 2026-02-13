@@ -17,9 +17,9 @@ export const MOCK_DOCTORS: Doctor[] = [
 ];
 
 export const MOCK_PHARMACISTS: Pharmacist[] = [
-  { id: 'ph1', name: 'Ramesh Gupta', contact: '9876543210', shift: 'Morning (8AM - 4PM)', licenseNumber: 'DL-PH-1001' },
-  { id: 'ph2', name: 'Sita Verma', contact: '8765432109', shift: 'Evening (2PM - 10PM)', licenseNumber: 'DL-PH-1045' },
-  { id: 'ph3', name: 'Vikram Singh', contact: '7654321098', shift: 'Night (10PM - 8AM)', licenseNumber: 'DL-PH-2022' },
+  { id: 'ph1', name: 'Ramesh Gupta', contact: '9876543210', shift: 'Morning (8AM - 4PM)', licenseNumber: 'DL-PH-1001', username: 'ramesh', password: '123' },
+  { id: 'ph2', name: 'Sita Verma', contact: '8765432109', shift: 'Evening (2PM - 10PM)', licenseNumber: 'DL-PH-1045', username: 'sita', password: '123' },
+  { id: 'ph3', name: 'Vikram Singh', contact: '7654321098', shift: 'Night (10PM - 8AM)', licenseNumber: 'DL-PH-2022', username: 'vikram', password: '123' },
 ];
 
 export const MOCK_MEDICINES: Medicine[] = [

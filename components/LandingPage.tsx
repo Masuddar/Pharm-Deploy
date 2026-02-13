@@ -1,14 +1,56 @@
 
-import React from 'react';
-import { ShieldCheck, UserPlus, HeartPulse, Stethoscope, ArrowRight, Activity, Pill, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldCheck, UserPlus, HeartPulse, Stethoscope, ArrowRight, Activity, Pill, MapPin, Copy, Check } from 'lucide-react';
+import { Pharmacist } from '../types';
+import LoginModal from './LoginModal';
 
 interface LandingPageProps {
   onNavigate: (view: 'ADMIN' | 'PATIENT' | 'PHARMACIST') => void;
+  pharmacists: Pharmacist[];
+  adminCredentials: { username: string; pass: string };
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, pharmacists, adminCredentials }) => {
+  const [showLogin, setShowLogin] = useState<boolean>(false);
+  const [loginRole, setLoginRole] = useState<'ADMIN' | 'PHARMACIST'>('ADMIN');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(text);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
+
+  const initiateLogin = (role: 'ADMIN' | 'PHARMACIST') => {
+    setLoginRole(role);
+    setShowLogin(true);
+  };
+
+  const verifyLogin = async (u: string, p: string): Promise<boolean> => {
+    if (loginRole === 'ADMIN') {
+      if (u === adminCredentials.username && p === adminCredentials.pass) {
+        onNavigate('ADMIN');
+        return true;
+      }
+    } else {
+      const validUser = pharmacists.find(ph => ph.username === u && ph.password === p);
+      if (validUser) {
+        onNavigate('PHARMACIST');
+        return true;
+      }
+    }
+    return false;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <LoginModal 
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        role={loginRole}
+        onLogin={verifyLogin}
+      />
+
       {/* Navbar */}
       <nav className="bg-white px-8 py-4 shadow-sm flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
@@ -50,7 +92,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           
           {/* Admin Login Card */}
           <div 
-            onClick={() => onNavigate('ADMIN')}
+            onClick={() => initiateLogin('ADMIN')}
             className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 cursor-pointer relative overflow-hidden transform hover:-translate-y-1"
           >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -72,7 +114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
           {/* Pharmacist Portal Card */}
           <div 
-            onClick={() => onNavigate('PHARMACIST')}
+            onClick={() => initiateLogin('PHARMACIST')}
             className="group bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-slate-100 cursor-pointer relative overflow-hidden transform hover:-translate-y-1"
           >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -114,6 +156,69 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </div>
           </div>
 
+        </div>
+
+        {/* --- DEMO CREDENTIALS SECTION --- */}
+        <div className="w-full max-w-6xl mt-16 relative z-10">
+          <div className="bg-white/80 backdrop-blur border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Demo Access Credentials (Click to Copy)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              {/* Admin Creds */}
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center justify-between group hover:shadow-md transition-all">
+                <div>
+                   <span className="text-xs font-bold text-blue-400 uppercase">Admin Access</span>
+                   <div className="font-mono text-sm text-blue-900 mt-1">
+                      User: <span className="font-bold">{adminCredentials.username}</span> <br/>
+                      Pass: <span className="font-bold">{adminCredentials.pass}</span>
+                   </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleCopy(adminCredentials.username)}
+                    className="p-2 bg-white rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Copy Username"
+                  >
+                    {copiedText === adminCredentials.username ? <Check size={16}/> : <Copy size={16} />}
+                  </button>
+                  <button 
+                    onClick={() => handleCopy(adminCredentials.pass)}
+                    className="p-2 bg-white rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Copy Password"
+                  >
+                    {copiedText === adminCredentials.pass ? <Check size={16}/> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Pharmacist Creds (Show first 2) */}
+              {pharmacists.slice(0, 2).map((ph, idx) => (
+                <div key={ph.id} className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center justify-between group hover:shadow-md transition-all">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-500 uppercase">Pharmacist {idx + 1}</span>
+                    <div className="font-mono text-sm text-emerald-900 mt-1">
+                        User: <span className="font-bold">{ph.username}</span> <br/>
+                        Pass: <span className="font-bold">{ph.password}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                        onClick={() => handleCopy(ph.username || '')}
+                        className="p-2 bg-white rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors"
+                    >
+                        {copiedText === ph.username ? <Check size={16}/> : <Copy size={16} />}
+                    </button>
+                    <button 
+                        onClick={() => handleCopy(ph.password || '')}
+                        className="p-2 bg-white rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors"
+                    >
+                        {copiedText === ph.password ? <Check size={16}/> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
