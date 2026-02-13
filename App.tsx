@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   LayoutDashboard, ShoppingCart, Package, Calendar, Settings, 
   Menu, X, Bell, BrainCircuit, Loader2, Sparkles, LogOut, History, UserCog, Users
@@ -21,25 +21,64 @@ import { getSmartInsights } from './services/geminiService';
 
 type ViewState = 'LANDING' | 'ADMIN' | 'PATIENT' | 'PHARMACIST';
 
+// --- Persistence Helper ---
+const loadState = <T,>(key: string, fallback: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
+  } catch (e) {
+    console.warn(`Failed to load ${key} from storage`, e);
+    return fallback;
+  }
+};
+
 const App: React.FC = () => {
   // --- Global State ---
   const [currentView, setCurrentView] = useState<ViewState>('LANDING');
   const [adminTab, setAdminTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Data State
-  const [medicines, setMedicines] = useState<Medicine[]>(MOCK_MEDICINES);
-  const [doctors, setDoctors] = useState<Doctor[]>(MOCK_DOCTORS);
-  const [pharmacists, setPharmacists] = useState<Pharmacist[]>(MOCK_PHARMACISTS);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  // --- Data State (with Persistence) ---
   
-  // Initialize with generated mock history for a "live" feel
-  const [sales, setSales] = useState<Sale[]>(GENERATE_MOCK_SALES());
-  
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    { id: 'a1', patientId: 'Rajesh Kumar', doctorId: 'd1', date: new Date().toISOString().split('T')[0], time: '10:30 AM', status: AppointmentStatus.BOOKED },
-    { id: 'a2', patientId: 'Anita Desai', doctorId: 'd2', date: new Date().toISOString().split('T')[0], time: '11:15 AM', status: AppointmentStatus.CHECKED_IN },
-  ]);
+  // Medicines
+  const [medicines, setMedicines] = useState<Medicine[]>(() => 
+    loadState('medsync_medicines', MOCK_MEDICINES)
+  );
+
+  // Doctors
+  const [doctors, setDoctors] = useState<Doctor[]>(() => 
+    loadState('medsync_doctors', MOCK_DOCTORS)
+  );
+
+  // Pharmacists
+  const [pharmacists, setPharmacists] = useState<Pharmacist[]>(() => 
+    loadState('medsync_pharmacists', MOCK_PHARMACISTS)
+  );
+
+  // Sales (Initialize with mock generation only if storage is empty)
+  const [sales, setSales] = useState<Sale[]>(() => 
+    loadState('medsync_sales', GENERATE_MOCK_SALES())
+  );
+
+  // Appointments
+  const [appointments, setAppointments] = useState<Appointment[]>(() => 
+    loadState('medsync_appointments', [
+      { id: 'a1', patientId: 'Rajesh Kumar', doctorId: 'd1', date: new Date().toISOString().split('T')[0], time: '10:30 AM', status: AppointmentStatus.BOOKED },
+      { id: 'a2', patientId: 'Anita Desai', doctorId: 'd2', date: new Date().toISOString().split('T')[0], time: '11:15 AM', status: AppointmentStatus.CHECKED_IN },
+    ])
+  );
+
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(() => 
+    loadState('medsync_orders', [])
+  );
+
+  // --- Persist Data on Change ---
+  useEffect(() => localStorage.setItem('medsync_medicines', JSON.stringify(medicines)), [medicines]);
+  useEffect(() => localStorage.setItem('medsync_doctors', JSON.stringify(doctors)), [doctors]);
+  useEffect(() => localStorage.setItem('medsync_pharmacists', JSON.stringify(pharmacists)), [pharmacists]);
+  useEffect(() => localStorage.setItem('medsync_sales', JSON.stringify(sales)), [sales]);
+  useEffect(() => localStorage.setItem('medsync_appointments', JSON.stringify(appointments)), [appointments]);
+  useEffect(() => localStorage.setItem('medsync_orders', JSON.stringify(purchaseOrders)), [purchaseOrders]);
 
   // AI State
   const [aiInsights, setAiInsights] = useState<AnalyticsInsight[]>([]);
@@ -90,12 +129,10 @@ const App: React.FC = () => {
     setMedicines(updatedMedicines);
   };
 
-  // --- NEW: Handle Deleting a Sale (Void) ---
   const handleDeleteSale = (saleId: string) => {
     const saleToDelete = sales.find(s => s.id === saleId);
     if (!saleToDelete) return;
 
-    // 1. Restore Stock
     setMedicines(prev => prev.map(m => {
       if (m.id === saleToDelete.medicineId) {
         return { ...m, stock: m.stock + saleToDelete.quantity };
@@ -103,18 +140,15 @@ const App: React.FC = () => {
       return m;
     }));
 
-    // 2. Remove Sale
     setSales(prev => prev.filter(s => s.id !== saleId));
   };
 
-  // --- NEW: Handle Editing a Sale ---
   const handleEditSale = (updatedSale: Sale) => {
     const originalSale = sales.find(s => s.id === updatedSale.id);
     if (!originalSale) return;
 
     const quantityDifference = updatedSale.quantity - originalSale.quantity;
 
-    // 1. Update Stock (Subtract difference. If new qty is higher, diff is positive, so stock decreases)
     setMedicines(prev => prev.map(m => {
       if (m.id === updatedSale.medicineId) {
         return { ...m, stock: m.stock - quantityDifference };
@@ -122,11 +156,9 @@ const App: React.FC = () => {
       return m;
     }));
 
-    // 2. Update Sale Record
     setSales(prev => prev.map(s => s.id === updatedSale.id ? updatedSale : s));
   };
 
-  // --- NEW: Handle Wholesaler Order ---
   const handlePlaceOrder = (orderData: { medicineName: string; quantity: number; supplier: string }) => {
     const newOrder: PurchaseOrder = {
       id: `po-${Date.now()}`,
@@ -137,10 +169,8 @@ const App: React.FC = () => {
       orderDate: new Date().toISOString().split('T')[0]
     };
     setPurchaseOrders(prev => [...prev, newOrder]);
-    // In a real app, this would trigger an API call or email.
     alert(`Purchase Order Created!\nItem: ${orderData.medicineName}\nQty: ${orderData.quantity}\nSupplier: ${orderData.supplier}`);
   };
-
 
   const updateAppointmentStatus = (id: string, status: AppointmentStatus) => {
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -148,7 +178,6 @@ const App: React.FC = () => {
 
   // --- Handlers: CRUD Operations ---
 
-  // Inventory CRUD
   const handleAddMedicine = (med: Medicine) => {
     setMedicines(prev => [...prev, med]);
   };
@@ -161,7 +190,6 @@ const App: React.FC = () => {
     setMedicines(prev => prev.filter(m => m.id !== id));
   };
 
-  // Doctor CRUD
   const handleAddDoctor = (doc: Doctor) => {
     setDoctors(prev => [...prev, doc]);
   };
@@ -174,7 +202,6 @@ const App: React.FC = () => {
     setDoctors(prev => prev.filter(d => d.id !== id));
   };
 
-  // Pharmacist CRUD
   const handleAddPharmacist = (phar: Pharmacist) => {
     setPharmacists(prev => [...prev, phar]);
   };
@@ -187,7 +214,6 @@ const App: React.FC = () => {
     setPharmacists(prev => prev.filter(p => p.id !== id));
   };
 
-  // AI Handler
   const fetchInsights = useCallback(async () => {
     if (!process.env.API_KEY) return;
     setIsAiLoading(true);
@@ -196,16 +222,12 @@ const App: React.FC = () => {
     setIsAiLoading(false);
   }, [sales, medicines]);
 
-  // --- Helper: Get Today's Sales for Pharmacy View ---
   const todaysSales = sales.filter(s => 
     s.timestamp.startsWith(new Date().toISOString().split('T')[0])
   );
 
-  // --- Render Views ---
-
   const handleLandingNavigation = (view: ViewState) => {
     setCurrentView(view);
-    // Set default tabs based on view
     if (view === 'PHARMACIST') setAdminTab('daily-sales');
     if (view === 'ADMIN') setAdminTab('dashboard');
   };
@@ -241,7 +263,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex overflow-hidden font-sans">
-      {/* Sidebar */}
       <aside 
         className={`${
           isSidebarOpen ? 'w-64' : 'w-20'
@@ -287,9 +308,7 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-600">
@@ -324,7 +343,6 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-8">
           {aiInsights.length > 0 && currentRole === 'ADMIN' && (
             <div className="mb-8 p-6 bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-2xl animate-in fade-in slide-in-from-top-4">
